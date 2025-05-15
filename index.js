@@ -1,14 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-
-
 const port = process.env.PORT || 5000;
 const app = express();
 
 //middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+
+  ],
+  credentials: true
+}));
 
 
 
@@ -34,6 +39,7 @@ async function run() {
 
     const database = client.db("parcelDB");
     const usersCollection = database.collection("users")
+    const bookingCollection = database.collection("bookingList")
 
     //saving user data to db
     app.post('/users/:email', async (req, res) => {
@@ -48,6 +54,64 @@ async function run() {
       res.send(result);
     })
 
+//update profile image
+    app.patch('/user/profile/:email', async (req, res) => {
+      const { image }= req.body;
+      const email = req.params.email;
+      const filter = { email };
+      const updateDoc = {
+        $set: {
+          image : image,
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
+
+    //get user role
+    app.get('/users/role/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await usersCollection.findOne(query);
+
+      res.send({ role: result?.role })
+    })
+
+    //post-book-a-parcel
+    app.post('/book-a-parcel', async (req, res) => {
+      const bookingData = req.body;
+      const result = await bookingCollection.insertOne(bookingData);
+      console.log(result);
+      res.send(result);
+    })
+
+    // my-parcels-for-one email
+    app.get('/my-parcels/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email }
+      const result = await bookingCollection
+        .aggregate([
+          {
+            $match: {
+              'email': email
+            }
+          },
+
+
+
+        ])
+        .toArray();
+      console.log(result);
+      res.send(result);
+    })
+
+
+
+
+
+
+
+
 
   } finally {
     // Ensures that the client will close when you finish/error
@@ -57,7 +121,7 @@ async function run() {
 run().catch(console.dir);
 
 app.get('/', async (req, res) => {
-  res.send("Transito-Parcel Management System!")
+  res.send("Transito! A Parcel Management System!")
 })
 
 app.listen(port, () => {
