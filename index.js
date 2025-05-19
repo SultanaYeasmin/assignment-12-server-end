@@ -54,14 +54,14 @@ async function run() {
       res.send(result);
     })
 
-//update profile image
+    //update profile image
     app.patch('/user/profile/:email', async (req, res) => {
-      const { image }= req.body;
+      const { image } = req.body;
       const email = req.params.email;
       const filter = { email };
       const updateDoc = {
         $set: {
-          image : image,
+          image: image,
         },
       };
       const result = await usersCollection.updateOne(filter, updateDoc);
@@ -86,26 +86,51 @@ async function run() {
     })
 
     // my-parcels-for-one email
-    app.get('/my-parcels/:email', async (req, res) => {
-      const email = req.params.email;
-      const query = { email }
-      const result = await bookingCollection
-        .aggregate([
-          {
-            $match: {
-              'email': email
-            }
-          },
+    // app.get('/my-parcels/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const query = { email }
+    //   const result = await bookingCollection
+    //     .aggregate([
+    //       {
+    //         $match: {
+    //           'email': email
+    //         }
+    //       },
+    //     ])
+    //     .toArray();
+    //   console.log(result);
+    //   res.send(result);
+    // })
 
-
-
-        ])
-        .toArray();
-      console.log(result);
+    //admin
+    //get All parcels 
+    app.get('/all-parcels', async (req, res) => {
+      const result = await bookingCollection.find().toArray();
       res.send(result);
     })
 
 
+  //get All delivery-men
+    app.get('/delivery-men', async (req, res) => {
+      const filter = {role: "Delivery Man" }
+      const result = await usersCollection.find(filter).toArray();
+      res.send(result);
+    })
+
+
+    //update status and assign delivery man
+    app.patch('/book-a-parcel', async (req, res) => {
+      const { image } = req.body;
+      const email = req.params.email;
+      const filter = { email };
+      const updateDoc = {
+        $set: {
+          image: image,
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    })
 
 
 
