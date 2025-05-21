@@ -102,10 +102,66 @@ async function run() {
     //   res.send(result);
     // })
 
+    // delivery men:
+    app.get('/all-parcels/:email', async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email }
+
+      const user = await usersCollection.findOne(filter);
+      const id = user?._id.toString();
+      console.log(id, typeof(id))
+      const query = { delivery_man_ID: id }
+      const result = await bookingCollection.find(query).toArray();
+      res.send(result);
+
+    })
+
+ //role update
+    app.patch('/all-parcels/:id', async (req, res) => {
+      const id = req.params.id;
+      const { status } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: status
+        },
+      };
+
+      const result = await bookingCollection.updateOne(filter, updateDoc);
+
+      res.send(result);
+    })
+
+
     //admin
     //get All parcels 
     app.get('/all-parcels', async (req, res) => {
       const result = await bookingCollection.find().toArray();
+      res.send(result);
+    })
+
+
+    //get All users
+    app.get('/all-users', async (req, res) => {
+
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    })
+
+
+    //role update
+    app.patch('/user/:id', async (req, res) => {
+      const id = req.params.id;
+      const { role } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: role
+        },
+      };
+
+      const result = await usersCollection.updateOne(filter, updateDoc);
+
       res.send(result);
     })
 
@@ -132,7 +188,7 @@ async function run() {
           expected_delivery_date
         },
       };
-      
+
       const result = await bookingCollection.updateOne(filter, updateDoc);
 
       res.send(result);
