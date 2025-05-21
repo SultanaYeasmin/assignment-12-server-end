@@ -17,7 +17,7 @@ app.use(cors({
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.db_username}:${process.env.db_password}@cluster0.g4p4k.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -110,25 +110,31 @@ async function run() {
     })
 
 
-  //get All delivery-men
+    //get All delivery-men
     app.get('/delivery-men', async (req, res) => {
-      const filter = {role: "Delivery Man" }
+      const filter = { role: "Delivery Man" }
       const result = await usersCollection.find(filter).toArray();
       res.send(result);
     })
 
 
     //update status and assign delivery man
-    app.patch('/book-a-parcel', async (req, res) => {
-      const { image } = req.body;
-      const email = req.params.email;
-      const filter = { email };
+    app.patch('/book-a-parcel/:id', async (req, res) => {
+      const id = req.params.id;
+      const { status,
+        delivery_man_ID,
+        expected_delivery_date } = req.body;
+      const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          image: image,
+          status,
+          delivery_man_ID,
+          expected_delivery_date
         },
       };
-      const result = await usersCollection.updateOne(filter, updateDoc);
+      
+      const result = await bookingCollection.updateOne(filter, updateDoc);
+
       res.send(result);
     })
 
