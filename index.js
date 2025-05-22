@@ -86,21 +86,44 @@ async function run() {
     })
 
     // my-parcels-for-one email
-    // app.get('/my-parcels/:email', async (req, res) => {
-    //   const email = req.params.email;
-    //   const query = { email }
-    //   const result = await bookingCollection
-    //     .aggregate([
-    //       {
-    //         $match: {
-    //           'email': email
-    //         }
-    //       },
-    //     ])
-    //     .toArray();
-    //   console.log(result);
-    //   res.send(result);
-    // })
+    app.get('/my-parcels/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email }
+      const result = await bookingCollection
+        .find(query)
+        .toArray();
+      console.log(result);
+      res.send(result);
+    })
+
+    // my-parcels-for-one id
+    app.get('/parcel/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      console.log(id, query);
+      const result = await bookingCollection
+        .findOne(query)
+        ;
+      console.log(result);
+      res.send(result);
+    })
+
+    //update my-parcels-for-one id
+    app.put('/update-a-parcel/:id', async (req, res) => {
+      const id = req.params.id;
+
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true };
+      const updatedParcelData = req.body;
+      const updateDoc = {
+        $set: updatedParcelData
+      };
+      const result = await bookingCollection
+        .updateOne(filter, updateDoc, options)
+        ;
+      console.log(result);
+      res.send(result);
+    })
 
     // delivery men:
     app.get('/all-parcels/:email', async (req, res) => {
@@ -109,14 +132,14 @@ async function run() {
 
       const user = await usersCollection.findOne(filter);
       const id = user?._id.toString();
-      console.log(id, typeof(id))
+      console.log(id, typeof (id))
       const query = { delivery_man_ID: id }
       const result = await bookingCollection.find(query).toArray();
       res.send(result);
 
     })
 
- //role update
+    //status update
     app.patch('/all-parcels/:id', async (req, res) => {
       const id = req.params.id;
       const { status } = req.body;
