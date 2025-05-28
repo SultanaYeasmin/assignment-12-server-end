@@ -15,8 +15,6 @@ app.use(cors({
   credentials: true
 }));
 
-
-
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.db_username}:${process.env.db_password}@cluster0.g4p4k.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -40,6 +38,7 @@ async function run() {
     const database = client.db("parcelDB");
     const usersCollection = database.collection("users")
     const bookingCollection = database.collection("bookingList")
+    const reviewCollection = database.collection("reviews")
 
     //saving user data to db
     app.post('/users/:email', async (req, res) => {
@@ -125,6 +124,21 @@ async function run() {
       res.send(result);
     })
 
+    //status update
+    app.patch('/parcel/:id', async (req, res) => {
+      const id = req.params.id;
+      const { status } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: status
+        },
+      };
+
+      const result = await bookingCollection.updateOne(filter, updateDoc);
+      console.log(result)
+      res.send(result);
+    })
     // delivery men:
     app.get('/all-parcels/:email', async (req, res) => {
       const email = req.params.email;
@@ -132,9 +146,22 @@ async function run() {
 
       const user = await usersCollection.findOne(filter);
       const id = user?._id.toString();
-      console.log(id, typeof (id))
+      // console.log(id, typeof (id))
       const query = { delivery_man_ID: id }
       const result = await bookingCollection.find(query).toArray();
+      res.send(result);
+
+    })
+
+    app.get('/my-reviews/:email', async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email }
+
+      const user = await usersCollection.findOne(filter);
+      const id = user?._id.toString();
+      console.log(id, typeof (id))
+      const query = { delivery_man_ID: id }
+      const result = await reviewCollection.find(query).toArray();
       res.send(result);
 
     })
@@ -152,6 +179,15 @@ async function run() {
 
       const result = await bookingCollection.updateOne(filter, updateDoc);
 
+      res.send(result);
+    })
+
+    
+    app.post('/review-delivery-man', async (req, res) => {
+     
+      const reviewData = req.body;
+      
+      const result = await reviewCollection.insertOne(reviewData);
       res.send(result);
     })
 
