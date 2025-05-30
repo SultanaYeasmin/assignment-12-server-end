@@ -195,8 +195,19 @@ async function run() {
     //admin
     //get All parcels 
     app.get('/all-parcels', async (req, res) => {
-      const result = await bookingCollection.find().toArray();
-      res.send(result);
+      const delivery_man_ID = (req.query.delivery_man_ID);
+      const status = (req.query.status);
+     console.log(typeof delivery_man_ID)
+
+      const query = {};
+      if (delivery_man_ID && status){
+        query.delivery_man_ID = delivery_man_ID;
+        query.status = status
+      }
+      const result = await bookingCollection.find(query).toArray();
+      const count = result.length;
+       console.log(count);
+      res.send({ count, data: result,});
     })
 
     //get All users
@@ -244,7 +255,8 @@ res.send({count});
       res.send(result);
     })
 
-
+//no of delivered parcels
+app.get('/')
     //update status and assign delivery man
     app.patch('/book-a-parcel/:id', async (req, res) => {
       const id = req.params.id;
