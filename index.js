@@ -182,11 +182,11 @@ async function run() {
       res.send(result);
     })
 
-    
+
     app.post('/review-delivery-man', async (req, res) => {
-     
+
       const reviewData = req.body;
-      
+
       const result = await reviewCollection.insertOne(reviewData);
       res.send(result);
     })
@@ -199,14 +199,26 @@ async function run() {
       res.send(result);
     })
 
-
     //get All users
     app.get('/all-users', async (req, res) => {
-
-      const result = await usersCollection.find().toArray();
+      // console.log("pagination", req.query);
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      //  console.log("pagination", page, size);
+      const result = await usersCollection.find()
+      .skip((page-1)*size)
+      .limit(size)
+      .toArray();
       res.send(result);
     })
 
+
+app.get('/usersCount', async(req, res)=>{
+const count = await usersCollection.estimatedDocumentCount();
+console.log("count",count)
+res.send({count});
+
+})
 
     //role update
     app.patch('/user/:id', async (req, res) => {
