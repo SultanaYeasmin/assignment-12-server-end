@@ -159,7 +159,7 @@ async function run() {
 
       const user = await usersCollection.findOne(filter);
       const id = user?._id.toString();
-      console.log(id, typeof (id))
+      // console.log(id, typeof (id))
       const query = { delivery_man_ID: id }
       const result = await reviewCollection.find(query).toArray();
       res.send(result);
@@ -197,7 +197,7 @@ async function run() {
     app.get('/all-parcels', async (req, res) => {
       const delivery_man_ID = (req.query.delivery_man_ID);
       const status = (req.query.status);
-      console.log(typeof delivery_man_ID)
+      // console.log(typeof delivery_man_ID)
 
       const query = {};
       if (delivery_man_ID && status) {
@@ -210,47 +210,38 @@ async function run() {
       res.send({ count, data: result });
     })
 
-    //get All users & 
+    //get All users 
     app.get('/all-users', async (req, res) => {
       // console.log("pagination", req.query);
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
       //  console.log("pagination", page, size);
-      const email = req.query.email;
-
-      const query = {};
-      if (email) {
-        query.email = email;
-      }
-      const result = await usersCollection.find(query)
+     
+      const result = await usersCollection.find()
         .skip((page - 1) * size)
         .limit(size)
         .toArray();
-      res.send({data:result, count:result.length});
+      res.send({data:result});
     })
-    
-    app.get('/all-users', async (req, res) => {
-      // console.log("pagination", req.query);
-      const page = parseInt(req.query.page);
-      const size = parseInt(req.query.size);
-      //  console.log("pagination", page, size);
-      const email = req.query.email;
 
+
+    // get no of parcels booked
+    app.get('/bookings/:email', async (req, res) => {
+      
+      const email = req.params.email;
       const query = {};
       if (email) {
         query.email = email;
       }
-      const result = await usersCollection.find(query)
-        .skip((page - 1) * size)
-        .limit(size)
-        .toArray();
-      res.send({data:result, count:result.length});
+      const count = await bookingCollection.countDocuments(query)
+        // console.log("no of parcels booked", count)
+      res.send({count});
     })
 
 
     app.get('/usersCount', async (req, res) => {
       const count = await usersCollection.estimatedDocumentCount();
-      console.log("count", count)
+      // console.log("count", count)
       res.send({ count });
 
     })
@@ -297,7 +288,7 @@ async function run() {
         ])
         .toArray();
       const averageRating = result.length > 0 ? result[0].averageReview : 0;
-      console.log(averageRating)
+      // console.log(averageRating)
       res.send({ averageRating });
     })
 
