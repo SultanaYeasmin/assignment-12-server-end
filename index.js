@@ -193,43 +193,67 @@ async function run() {
 
 
     //admin
-    //get All parcels 
+    //get All parcels & no of delivered parcels
     app.get('/all-parcels', async (req, res) => {
       const delivery_man_ID = (req.query.delivery_man_ID);
       const status = (req.query.status);
-     console.log(typeof delivery_man_ID)
+      console.log(typeof delivery_man_ID)
 
       const query = {};
-      if (delivery_man_ID && status){
+      if (delivery_man_ID && status) {
         query.delivery_man_ID = delivery_man_ID;
         query.status = status
       }
       const result = await bookingCollection.find(query).toArray();
       const count = result.length;
-       console.log(count);
-      res.send({ count, data: result,});
+      // console.log(count);
+      res.send({ count, data: result });
     })
 
-    //get All users
+    //get All users & 
     app.get('/all-users', async (req, res) => {
       // console.log("pagination", req.query);
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
       //  console.log("pagination", page, size);
-      const result = await usersCollection.find()
-      .skip((page-1)*size)
-      .limit(size)
-      .toArray();
-      res.send(result);
+      const email = req.query.email;
+
+      const query = {};
+      if (email) {
+        query.email = email;
+      }
+      const result = await usersCollection.find(query)
+        .skip((page - 1) * size)
+        .limit(size)
+        .toArray();
+      res.send({data:result, count:result.length});
+    })
+    
+    app.get('/all-users', async (req, res) => {
+      // console.log("pagination", req.query);
+      const page = parseInt(req.query.page);
+      const size = parseInt(req.query.size);
+      //  console.log("pagination", page, size);
+      const email = req.query.email;
+
+      const query = {};
+      if (email) {
+        query.email = email;
+      }
+      const result = await usersCollection.find(query)
+        .skip((page - 1) * size)
+        .limit(size)
+        .toArray();
+      res.send({data:result, count:result.length});
     })
 
 
-app.get('/usersCount', async(req, res)=>{
-const count = await usersCollection.estimatedDocumentCount();
-console.log("count",count)
-res.send({count});
+    app.get('/usersCount', async (req, res) => {
+      const count = await usersCollection.estimatedDocumentCount();
+      console.log("count", count)
+      res.send({ count });
 
-})
+    })
 
     //role update
     app.patch('/user/:id', async (req, res) => {
@@ -247,7 +271,6 @@ res.send({count});
       res.send(result);
     })
 
-
     //get All delivery-men
     app.get('/delivery-men', async (req, res) => {
       const filter = { role: "Delivery Man" }
@@ -255,8 +278,31 @@ res.send({count});
       res.send(result);
     })
 
-//no of delivered parcels
-app.get('/')
+    //get avg review
+    app.get('/review/:id', async (req, res) => {
+      const id = req.params.id;
+      const result = await reviewCollection
+        .aggregate([
+          {
+            $match: { delivery_man_ID: id }
+          },
+          {
+            $group: {
+              _id: "$ delivery_man_ID",
+              averageReview: {
+                $avg: "$rating"
+              }
+            }
+          }
+        ])
+        .toArray();
+      const averageRating = result.length > 0 ? result[0].averageReview : 0;
+      console.log(averageRating)
+      res.send({ averageRating });
+    })
+
+
+
     //update status and assign delivery man
     app.patch('/book-a-parcel/:id', async (req, res) => {
       const id = req.params.id;
