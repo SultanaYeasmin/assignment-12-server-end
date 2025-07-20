@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const port = process.env.PORT || 5000;
 const app = express();
 
@@ -37,7 +39,7 @@ async function run() {
 
     const database = client.db("parcelDB");
     const usersCollection = database.collection("users")
-    const bookingCollection = database.collection("bookingList")
+    const bookingCollection = database.collection("bookings")
     const reviewCollection = database.collection("reviews")
 
     //saving user data to db
@@ -80,18 +82,22 @@ async function run() {
     app.post('/book-a-parcel', async (req, res) => {
       const bookingData = req.body;
       const result = await bookingCollection.insertOne(bookingData);
-      console.log(result);
+      // console.log(result);
       res.send(result);
     })
 
     // my-parcels-for-one email
     app.get('/my-parcels/:email', async (req, res) => {
       const email = req.params.email;
+      const status = req.query.status;
       const query = { email }
+      if (email && status !== "All") {
+        query.status = status
+      }
       const result = await bookingCollection
         .find(query)
         .toArray();
-      console.log(result);
+      // console.log(result);
       res.send(result);
     })
 
@@ -99,11 +105,11 @@ async function run() {
     app.get('/parcel/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
-      console.log(id, query);
+      // console.log(id, query);
       const result = await bookingCollection
         .findOne(query)
         ;
-      console.log(result);
+      // console.log(result);
       res.send(result);
     })
 
@@ -120,7 +126,7 @@ async function run() {
       const result = await bookingCollection
         .updateOne(filter, updateDoc, options)
         ;
-      console.log(result);
+      // console.log(result);
       res.send(result);
     })
 
@@ -136,7 +142,7 @@ async function run() {
       };
 
       const result = await bookingCollection.updateOne(filter, updateDoc);
-      console.log(result)
+      // console.log(result)
       res.send(result);
     })
     // delivery men:
@@ -216,26 +222,26 @@ async function run() {
       const page = parseInt(req.query.page);
       const size = parseInt(req.query.size);
       //  console.log("pagination", page, size);
-     
+
       const result = await usersCollection.find()
         .skip((page - 1) * size)
         .limit(size)
         .toArray();
-      res.send({data:result});
+      res.send({ data: result });
     })
 
 
     // get no of parcels booked
     app.get('/bookings/:email', async (req, res) => {
-      
+
       const email = req.params.email;
       const query = {};
       if (email) {
         query.email = email;
       }
       const count = await bookingCollection.countDocuments(query)
-        // console.log("no of parcels booked", count)
-      res.send({count});
+      // console.log("no of parcels booked", count)
+      res.send({ count });
     })
 
 
@@ -314,8 +320,52 @@ async function run() {
       res.send(result);
     })
 
+    // statistics page : 
+    // ❖	A bar chart that shows bookings by date.
 
+    app.get('/bookings-by-date', async (req, res) => {
 
+      const bookingsByDate = await bookingCollection
+        .aggregate([
+          {
+            $group: {
+              _id: "$booking_date",
+              count: { $sum: 1 }
+            }
+          },
+          {
+            $sort: { _id: 1 }
+          }
+        ]).toArray();
+      const dates = bookingsByDate.map(item => item._id)
+      const count = bookingsByDate.map(item => item.count)
+      // console.log(dates, count)
+      res.send({ dates, count })
+    })
+
+    //PAYMENT INTENT
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      console.log(price)
+      const amount = parseInt(price * 100);
+      console.log(`${amount} payment intent`)
+
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ['card'] //extra
+
+        // // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+        // automatic_payment_methods: {
+        //   enabled: true,
+        // },
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
 
 
