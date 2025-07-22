@@ -41,6 +41,7 @@ async function run() {
     const usersCollection = database.collection("users")
     const bookingCollection = database.collection("bookings")
     const reviewCollection = database.collection("reviews")
+    const paymentCollection = database.collection("payments")
 
     //saving user data to db
     app.post('/users/:email', async (req, res) => {
@@ -367,7 +368,13 @@ async function run() {
       });
     });
 
-
+    //payments
+    app.post('/payments', async (req, res) => {
+      const payment = req.body;
+      console.log('payment:', payment);
+      const result = await paymentCollection.insertOne(payment);
+      res.send(result);
+    })
 
 
   } finally {
