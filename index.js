@@ -371,11 +371,31 @@ async function run() {
     //payments
     app.post('/payments', async (req, res) => {
       const payment = req.body;
-      console.log('payment:', payment);
+      const id = payment.bookings_id;
+     console.log(id);
+
       const result = await paymentCollection.insertOne(payment);
-      res.send(result);
+
+      
+
+      const query = {
+        _id: new ObjectId(id)
+      }
+      console.log(query)
+      const deleteResult = await bookingCollection.deleteOne(query);
+
+      console.log(deleteResult);
+
+      res.send({ result, deleteResult });
     })
 
+    app.get('/parcels-statistics', async(req, res)=>{
+      const bookedParcels = await bookingCollection.estimatedDocumentCount();
+      const deliveredParcels = await bookingCollection.countDocuments({status: "Delivered"});
+      const registeredUsers = await usersCollection.estimatedDocumentCount();
+       
+      res.send({bookedParcels, deliveredParcels, registeredUsers})
+    })
 
   } finally {
     // Ensures that the client will close when you finish/error
