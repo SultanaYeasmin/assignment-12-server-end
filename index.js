@@ -43,6 +43,65 @@ async function run() {
     const reviewCollection = database.collection("reviews")
     const paymentCollection = database.collection("payments")
 
+
+
+    //top delivery men 3 nos
+    app.get('/top-delivery-men', async (req, res) => {
+
+      const topDeliveryMen = await bookingCollection.aggregate([
+        {
+          $match: { status: "Delivered" }
+        },
+        {
+          $group: {
+            _id: "$delivery_man_ID",
+            totalDeliveredParcels: { $sum: 1 }
+          }
+        },
+        {
+          $lookup: {
+            from: "reviews",
+            localField: "_id",
+            foreignField: "delivery_man_ID",
+            as: "reviews"
+          }
+        },
+        {
+          $addFields: {
+            averageRating: { $avg: "$reviews.rating" },
+            deliveryManObjectId: { $toObjectId: "$_id" }
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "deliveryManObjectId",
+            foreignField: "_id",
+            as: "details"
+          }
+        },
+        {
+          $unwind: "$details"
+        },
+        {
+          $project: {
+            name: "$details.name",
+            image: "$details.image",
+            totalDeliveredParcels: 1,
+            averageRating: { $ifNull: ["$averageRating", 0] },
+
+          }
+        },
+        {
+          $sort: { totalDeliveredParcels: -1, averageRating: -1 }
+        },
+        { $limit: 3 },
+      ]).toArray();
+      console.log(topDeliveryMen)
+      res.send({ topDeliveryMen });
+
+    })
+
     //saving user data to db
     app.post('/users/:email', async (req, res) => {
       const email = req.params.email;
@@ -286,7 +345,7 @@ async function run() {
           },
           {
             $group: {
-              _id: "$ delivery_man_ID",
+              _id: "$delivery_man_ID",
               averageReview: {
                 $avg: "$rating"
               }
@@ -372,11 +431,11 @@ async function run() {
     app.post('/payments', async (req, res) => {
       const payment = req.body;
       const id = payment.bookings_id;
-     console.log(id);
+      console.log(id);
 
       const result = await paymentCollection.insertOne(payment);
 
-      
+
 
       const query = {
         _id: new ObjectId(id)
@@ -389,12 +448,12 @@ async function run() {
       res.send({ result, deleteResult });
     })
 
-    app.get('/parcels-statistics', async(req, res)=>{
+    app.get('/parcels-statistics', async (req, res) => {
       const bookedParcels = await bookingCollection.estimatedDocumentCount();
-      const deliveredParcels = await bookingCollection.countDocuments({status: "Delivered"});
+      const deliveredParcels = await bookingCollection.countDocuments({ status: "Delivered" });
       const registeredUsers = await usersCollection.estimatedDocumentCount();
-       
-      res.send({bookedParcels, deliveredParcels, registeredUsers})
+
+      res.send({ bookedParcels, deliveredParcels, registeredUsers })
     })
 
   } finally {
