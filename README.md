@@ -53,3 +53,10 @@ Built with **Node.js, Express.js, and MongoDB**, it provides RESTful APIs for pa
 
 ---
 
+
+## 📂 GitHub Repositories  
+
+- **Client Side Repo:** [Click Here](https://github.com/SultanaYeasmin/assignment-12)  
+- **Server Side Repo:** [Click Here](https://github.com/SultanaYeasmin/assignment-12-server-end)  
+
+---
